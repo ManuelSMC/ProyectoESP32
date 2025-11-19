@@ -18,7 +18,7 @@ mongoose.connect(process.env.MONGODB_URI)
 // === APIs ===
 
 // POST: Recibe datos del ESP32 con DHT22
-app.post('/api/telemetry', async (req, res) => {
+app.post('/api/datos', async (req, res) => {
   try {
     const { temp, hum, timestamp } = req.body;
 
@@ -27,7 +27,7 @@ app.post('/api/telemetry', async (req, res) => {
       return res.status(400).json({ error: 'Faltan campos: temp, hum o timestamp' });
     }
 
-    // Convertir el string de timestamp (formato: "2025-04-05 14:32:10") a Date
+    // Convertir el string de timestamp a Date
     const fecha = new Date(timestamp);
     if (isNaN(fecha.getTime())) {
       return res.status(400).json({ error: 'Formato de timestamp inválido' });
@@ -54,7 +54,7 @@ app.post('/api/telemetry', async (req, res) => {
 });
 
 // GET: Todos los registros (ordenados por fecha descendente)
-app.get('/api/telemetry', async (req, res) => {
+app.get('/api/datos', async (req, res) => {
   try {
     const datos = await Telemetry.find().sort({ timestamp: -1 });
     res.json(datos);
@@ -65,7 +65,7 @@ app.get('/api/telemetry', async (req, res) => {
 
 
 // GET: Contador total
-app.get('/api/telemetry/count', async (req, res) => {
+app.get('/api/datos/count', async (req, res) => {
   try {
     const count = await Telemetry.countDocuments();
     res.json({ total_registros: count });
@@ -92,5 +92,5 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`POST → https://esp32-telemetry.onrender.com/api/telemetry`);
+  console.log(`POST → https://esp32-telemetry.onrender.com/api/datos`);
 });
