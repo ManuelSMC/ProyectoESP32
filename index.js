@@ -77,9 +77,9 @@ app.get('/api/datos/count', async (req, res) => {
 // Ruta raíz (opcional, para ver que funciona)
 app.get('/', (req, res) => {
   res.send(`
-    <h1>ESP32 + DHT22 Telemetría</h1>
+    <h1>ESP32 + DHT22</h1>
     <p><strong>Estado:</strong> API funcionando</p>
-    <p><strong>Endpoint POST:</strong> <code>/api/datos</code></p>
+    <p><strong>Endpoint POST/GET:</strong> <code>/api/datos</code></p>
     <p><strong>Total registros:</strong> <span id="count">cargando...</span></p>
     <script>
       fetch('/api/datos/count').then(r => r.json()).then(d => {
