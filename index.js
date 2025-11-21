@@ -27,7 +27,7 @@ app.post('/api/datos', async (req, res) => {
       return res.status(400).json({ error: 'Faltan campos: temp, hum o timestamp' });
     }
 
-    // Convertir el string de timestamp a Date
+    // Convertir el string de timestamp (formato: "2025-04-05 14:32:10") a Date
     const fecha = new Date(timestamp);
     if (isNaN(fecha.getTime())) {
       return res.status(400).json({ error: 'Formato de timestamp inválido' });
@@ -57,7 +57,19 @@ app.post('/api/datos', async (req, res) => {
 app.get('/api/datos', async (req, res) => {
   try {
     const datos = await Telemetry.find().sort({ timestamp: -1 });
-    res.json(datos);
+
+    // Convertir a hora local (Querétaro)
+    const datosFormateados = datos.map(d => ({
+      temp: d.temp,
+      hum: d.hum,
+      timestamp_local: d.timestamp.toLocaleString('es-MX', {
+        timeZone: 'America/Mexico_City'
+      }),
+      timestamp_utc: d.timestamp
+    }));
+
+    res.json(datosFormateados);
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -79,7 +91,7 @@ app.get('/', (req, res) => {
   res.send(`
     <h1>ESP32 + DHT22</h1>
     <p><strong>Estado:</strong> API funcionando</p>
-    <p><strong>Endpoint POST/GET:</strong> <code>/api/datos</code></p>
+    <p><strong>Endpoint POST:</strong> <code>/api/datos</code></p>
     <p><strong>Total registros:</strong> <span id="count">cargando...</span></p>
     <script>
       fetch('/api/datos/count').then(r => r.json()).then(d => {
@@ -88,9 +100,8 @@ app.get('/', (req, res) => {
     </script>
   `);
 });
-
+ 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`POST → https://esp32-telemetry.onrender.com/api/datos`);
 });
