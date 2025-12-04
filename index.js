@@ -137,6 +137,13 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en https://proyecto-esp.vercel.app`);
-});
+const PORT = process.env.PORT || 3000;
+
+// En Vercel (serverless), exportamos la app en lugar de hacer listen
+if (process.env.VERCEL) {
+  module.exports = app;
+} else {
+  app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  });
+}
