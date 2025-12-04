@@ -56,10 +56,38 @@ app.post('/api/datos', async (req, res) => {
 // GET: Todos los registros (ordenados por fecha descendente)
 app.get('/api/datos', async (req, res) => {
   try {
-    const datos = await Telemetry.find().sort({ timestamp: -1 });
+    const { limit, page, pageSize } = req.query;
 
-    // Convertir a hora local (Querétaro)
-    const datosFormateados = datos.map(d => ({
+    // Si se especifica limit, devolver últimos N registros
+    if (limit) {
+      const n = Math.max(1, Math.min(500, parseInt(String(limit), 10) || 20));
+      const datos = await Telemetry.find()
+        .sort({ timestamp: -1 })
+        .limit(n);
+
+      const datosFormateados = datos.map(d => ({
+        temp: d.temp,
+        hum: d.hum,
+        timestamp_local: d.timestamp.toLocaleString('es-MX', {
+          timeZone: 'America/Mexico_City'
+        }),
+        timestamp_utc: d.timestamp
+      }));
+
+      return res.json({ items: datosFormateados, total: datosFormateados.length });
+    }
+
+    // Paginación: page (1-based) y pageSize
+    const p = Math.max(1, parseInt(page ? String(page) : '1', 10));
+    const size = Math.max(1, Math.min(500, parseInt(pageSize ? String(pageSize) : '30', 10)));
+    const skip = (p - 1) * size;
+
+    const [items, total] = await Promise.all([
+      Telemetry.find().sort({ timestamp: -1 }).skip(skip).limit(size),
+      Telemetry.countDocuments()
+    ]);
+
+    const datosFormateados = items.map(d => ({
       temp: d.temp,
       hum: d.hum,
       timestamp_local: d.timestamp.toLocaleString('es-MX', {
@@ -68,11 +96,18 @@ app.get('/api/datos', async (req, res) => {
       timestamp_utc: d.timestamp
     }));
 
-    res.json(datosFormateados);
+    res.json({ items: datosFormateados, total, page: p, pageSize: size });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err && err.message ? err.message : 'Unknown error' });
   }
+});
+
+// GET: Devuelve un intervalo aleatorio entre 4s y 60s
+app.get('/api/update', (req, res) => {
+  // Número entero aleatorio [4, 60]
+  const intervalSeconds = Math.floor(Math.random() * (60 - 4 + 1)) + 4;
+  res.json({ intervalSeconds });
 });
 
 
@@ -92,6 +127,7 @@ app.get('/', (req, res) => {
     <h1>ESP32 + DHT22</h1>
     <p><strong>Estado:</strong> API funcionando</p>
     <p><strong>Endpoint POST:</strong> <code>/api/datos</code></p>
+    <p><strong>Endpoint GET para valor aleatorio entre 4s y 60s:</strong> <code>/api/update</code></p>
     <p><strong>Total registros:</strong> <span id="count">cargando...</span></p>
     <script>
       fetch('/api/datos/count').then(r => r.json()).then(d => {
