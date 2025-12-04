@@ -138,5 +138,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en https://proyecto-esp.vercel.app/`);
+  console.log(`Servidor corriendo en https://proyecto-esp.vercel.app`);
 });
